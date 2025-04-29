@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Create Group Chat</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 300px;
+            background-color: #242947;
+            color: white;
+            padding: 20px;
+        }
+
+        .sidebar h2 {
+            margin-top: 0;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .sidebar input, .sidebar button {
+            width: 100%;
+            margin-bottom: 15px;
+            padding: 8px;
+            border-radius: 4px;
+            border: none;
+        }
+
+        .sidebar input {
+            background: #fff;
+            color: #000;
+        }
+
+        .sidebar button {
+            background: #3b82f6;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .contact-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .contact-item input {
+            margin-right: 10px;
+        }
+
+        .main {
+            flex: 1;
+            background-color: #f4f4f4;
+            padding: 40px;
+        }
+
+        .chat-preview {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-preview p {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="sidebar">
+        <h2>Create Group</h2>
+        <input type="text" id="chatName" placeholder="Group name..."/>
+        <input type="text" id="search" placeholder="Search contacts..."/>
+
+        <div class="contact-list" id="contactList">
+            <!-- Contacts will be inserted here -->
+        </div>
+
+        <button onclick="createChat()">Create Chat</button>
+    </div>
+
+    <div class="main">
+        <div class="chat-preview" id="preview">
+            <h3>Group Chat Preview</h3>
+            <p><strong>Name:</strong> <span id="previewName">(none)</span></p>
+            <p><strong>Participants:</strong> <span id="previewUsers">(none)</span></p>
+        </div>
+    </div>
+</div>
+
+<script>
+    let allContacts = [];
+
+    async function loadContacts() {
+        const res = await fetch("/contacts/get_contacts", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                'Authorization': 'Bearer ' + localStorage.getItem('token')
+            }
+        });
+        const data = await res.json();
+        allContacts = data.contacts || [];
+        renderContacts(allContacts);
+    }
+
+    function renderContacts(contacts) {
+        const contactListEl = document.getElementById('contactList');
+        contactListEl.innerHTML = '';
+
+        contacts.forEach(contact => {
+            const item = document.createElement('div');
+            item.className = 'contact-item';
+
+            item.innerHTML = `
+        <input type="checkbox" value="${contact.id}" data-username="${contact.username}" onchange="updatePreview()" />
+        <label>${contact.username}</label>
+      `;
+
+            contactListEl.appendChild(item);
+        });
+    }
+
+    function updatePreview() {
+        const name = document.getElementById('chatName').value.trim();
+        const checkboxes = document.querySelectorAll('#contactList input[type=checkbox]:checked');
+        const selectedUsers = Array.from(checkboxes).map(cb => cb.dataset.username);
+
+        document.getElementById('previewName').textContent = name || "(none)";
+        document.getElementById('previewUsers').textContent = selectedUsers.length
+            ? selectedUsers.join(", ")
+            : "(none)";
+    }
+
+    function createChat() {
+        const name = document.getElementById('chatName').value.trim();
+        const checkboxes = document.querySelectorAll('#contactList input[type=checkbox]:checked');
+        const selectedIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+        console.log(selectedIds)
+        if (!name || selectedIds.length === 0) {
+            alert("Введите имя группы и выберите участников");
+            return;
+        }
+
+        const payload = {
+            name,
+            users: selectedIds
+        };
+
+        console.log("Creating chat:", payload);
+
+        fetch('/create_new_group_chat', {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/json",
+                'Authorization': 'Bearer ' + localStorage.getItem('token')
+            },
+            body: JSON.stringify(payload)
+        })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message || "Group chat created!");
+                document.getElementById('chatName').value = '';
+                updatePreview();
+            });
+    }
+
+    document.getElementById('chatName').addEventListener('input', updatePreview);
+    document.getElementById('search').addEventListener('input', e => {
+        const query = e.target.value.toLowerCase();
+        const filtered = allContacts.filter(c => c.username.toLowerCase().includes(query));
+        renderContacts(filtered);
+    });
+
+    loadContacts();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            display: flex;
+            width: 80%;
+            height: 80vh;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar {
+            width: 30%;
+            background: #2A2F4F;
+            color: white;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar header {
+            padding: 15px;
+            text-align: center;
+            background: #1E2340;
+        }
+
+        .search-bar {
+            width: 100%;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .search-bar input {
+            flex: 3 1;
+            padding: 8px;
+            border-radius: 5px;
+            border: none;
+        }
+
+        .search-bar button {
+            flex: 1;
+            box-sizing: border-box;
+            height: 100%;
+            padding: 8px 5px;
+            border-radius: 5px;
+            border: none;
+            background: #cccccc;
+            color: #333333;
+            cursor: pointer;
+        }
+
+        .friend-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        .friend {
+            padding: 15px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .friend.active, .friend:hover {
+            background: #1E2340;
+        }
+
+        .chat {
+            width: 70%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            padding: 15px;
+            background: #ddd;
+            text-align: center;
+        }
+
+        .messages {
+            flex-grow: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message_box {
+            width: 100%;
+            background: transparent;
+            display: flex;
+            flex-direction: row-reverse;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 0.5rem;
+        }
+
+        .message {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 10px;
+            width: fit-content;
+            max-width: 70%;
+            word-break: break-word;
+        }
+
+        .received {
+            background: #ddd;
+            justify-self: flex-start;
+        }
+
+        .sent {
+            background: #2A2F4F;
+            color: white;
+            justify-self: flex-end;
+        }
+
+        .chat-footer {
+            padding: 10px;
+            display: flex;
+            border-top: 1px solid #ddd;
+        }
+
+        .chat-footer label {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-footer input {
+            width: 100%;
+            border: none;
+        }
+
+        .chat-footer input:focus {
+            outline: none;
+        }
+
+        .chat-footer button {
+            padding: 8px 15px;
+            margin-left: 10px;
+            background: #2A2F4F;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .logout {
+            width: fit-content;
+            height: 30px;
+            padding: 0 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            background: #dd3756;
+            position: absolute;
+            left: 10px;
+            top: 10px;
+            color: white;
+        }
+
+        .edit-btn {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: black;
+        }
+
+        .message_box:hover .edit-btn {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+<button class="logout" onclick="logout()">logout</button>
+<button class="create_chat"><a href="/create_chat">create chat</a></button>
+<button class="create_chat"><a href="/contacts/add">add contacts</a></button>
+<button class="create_chat"><a href="/contacts/status">contacts status</a></button>
+
+<div class="container">
+    <aside class="sidebar">
+        <header>
+            <h2>Messenger</h2>
+        </header>
+        <div class="search-bar">
+            <input type="text" placeholder="Search...">
+            <button class="search-button" onclick="searchFriends()">Search</button>
+        </div>
+        <ul class="friend-list"></ul>
+    </aside>
+    <main class="chat">
+        <header class="chat-header">
+            <h3></h3>
+        </header>
+        <div class="messages"></div>
+        <footer class="chat-footer">
+            <label>
+                <input id="message_input" type="text" placeholder="Type a message...">
+            </label>
+            <button class="send" onclick="sendMessage()">Send</button>
+        </footer>
+    </main>
+</div>
+</body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+<script src="../static/js/home.js"></script>
+</html>
