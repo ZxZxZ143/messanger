@@ -1,5 +1,6 @@
 from flask import jsonify
-from flask_jwt_extended import create_access_token
+from flask_jwt_extended import create_access_token, create_refresh_token, set_access_cookies, set_refresh_cookies, \
+    get_jwt_identity, get_jwt
 
 from app.models.User import Users
 from app.extensions import bcrypt, db
@@ -17,8 +18,12 @@ def register_user(request):
             db.session.commit()
 
             access_token = create_access_token(identity=new_user.username, additional_claims={"id": new_user.id})
+            refresh_token = create_refresh_token(identity=new_user.username, additional_claims={"id": new_user.id})
+            res = jsonify({"status": 200, "message": "reg success", "user_id": new_user.id})
+            set_access_cookies(res, access_token)
+            set_refresh_cookies(res, refresh_token)
 
-            return jsonify({"status": 200, "message": "reg success", "token": access_token}), 200
+            return res, 200
         else:
             return jsonify({"status": 401, "message": "reg failed"}), 401
     else:
@@ -35,10 +40,34 @@ def login_user(request):
 
     if check_password(password, user.password_hash):
         access_token = create_access_token(identity=username, additional_claims={"id": user.id})
-        return jsonify(access_token=access_token), 200
+        refresh_token = create_refresh_token(identity=username, additional_claims={"id": user.id})
+
+        res = jsonify({"status": 200, "message": "login success", "user_id": user.id})
+
+        set_access_cookies(res, access_token)
+        set_refresh_cookies(res, refresh_token)
+
+        return res, 200
 
     return jsonify({"status": 401, "message": "Wrong data"}), 401
 
+
+def refresh_service(request):
+    try:
+        user_name = get_jwt_identity()
+        user_id = get_jwt().get('id')
+        res = jsonify({"status": 200, "message": "refresh success"})
+
+        access_token = create_access_token(identity=user_name, additional_claims={"id": user_id})
+        refresh_token = create_refresh_token(identity=user_name, additional_claims={"id": user_id})
+
+        set_access_cookies(res, access_token)
+        set_refresh_cookies(res, refresh_token)
+
+        return res, 200
+    except Exception as e:
+        print(e)
+        return jsonify({"status": 401, "message": "refresh failed"}), 401
 
 def hash_password(password):
     return bcrypt.generate_password_hash(password).decode('utf-8')

@@ -2,7 +2,7 @@ from flask import Blueprint, request, template_rendered, render_template
 from flask_jwt_extended import jwt_required
 
 from app.services.contact_service import get_contacts, add_contacts, accept_contacts, reject_contacts, \
-    get_pending_contacts
+    get_pending_contacts, get_new_users_service
 
 contacts_bp = Blueprint('contacts', __name__, url_prefix='/contacts')
 
@@ -44,3 +44,9 @@ def accept_contact():
 @jwt_required()
 def reject_contact():
     return reject_contacts(request)
+
+
+@contacts_bp.route('/get_new_users', methods=['POST'])
+@jwt_required()
+def get_new_users():
+    return get_new_users_service(request)

@@ -120,12 +120,14 @@
 
         fetch("/auth/register", {
             method: "POST",
+            credentials: "include",
             body: formData
         })
             .then(response => response.json())
             .then(data => {
-            if (data.status !== 200) throw new Error(data.message);
-                localStorage.setItem("token", data.token);
+                if (data.status !== 200) throw new Error(data.message);
+                localStorage.setItem("user_id", data.user_id)
+
                 window.location.href = "/home";
             }).catch(error => console.log(error));
     }

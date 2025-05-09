@@ -1,5 +1,5 @@
 from flask import Blueprint, request
-from flask_jwt_extended import jwt_required, get_jwt, decode_token
+from flask_jwt_extended import jwt_required, get_jwt, decode_token, verify_jwt_in_request, get_jwt_identity
 from flask_socketio import send, emit, join_room, leave_room, rooms
 from app.extensions import socketio
 from app.models.Chat_users import Chat_users
@@ -10,10 +10,9 @@ websocket_bp = Blueprint('websocket', __name__)
 
 @socketio.on('connect')
 def handle_connect():
-    token = request.args.get("token")  # Получаем заголовок Authorization
+    verify_jwt_in_request()
 
-    decoded_token = decode_token(token)  # Декодируем токен
-    user_id = decoded_token.get("id")
+    user_id = get_jwt().get('id')
 
     user_chats = Chat_users.query.filter_by(user_id=user_id).all()
 

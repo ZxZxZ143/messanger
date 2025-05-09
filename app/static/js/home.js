@@ -23,14 +23,14 @@ socket.on("connect_error", (err) => {
 socket.on("receive_message", (data) => {
     active_chat = document.querySelector(".active")?.dataset.id
     console.log(active_chat)
-    if (active_chat == data.chat_id && data.user_id !== parseJWT().id) {
+    if (active_chat == data.chat_id && data.user_id !== localStorage.getItem("user_id")) {
         create_message({message: data.text, id: data.message_id}, data.user_id)
     }
 });
 
 socket.on("edited_message", (data) => {
     active_chat = document.querySelector(".active")?.dataset.id
-    if (active_chat == data.chat_id && data.user_id !== parseJWT().id) {
+    if (active_chat == data.chat_id && data.user_id !== localStorage.getItem("user_id")) {
         document.querySelector(`[data-id="${data.message_id}"]`).querySelector("p").innerText = data.text
     }
 });
@@ -40,7 +40,7 @@ socket.on("join_chat", (data) => {
         "chat_id": data.chat_id,
     })
 
-    if (data.user_id !== parseJWT().id) {
+    if (data.user_id !== localStorage.getItem("user_id")) {
         const list = document.querySelector('.friend-list');
         const li = document.createElement('li');
         li.innerText = data.chat_name;
@@ -63,9 +63,7 @@ socket.on("join_chat", (data) => {
 
 fetch('/auth/check_token', {
     method: 'POST',
-    headers: {
-        'Authorization': 'Bearer ' + localStorage.getItem('token')
-    }
+    credentials: "include",
 })
     .then(response => response.json())
     .then(data => {
@@ -85,9 +83,7 @@ const logout = () => {
 const load_chats = () => {
     fetch("/get_friends", {
         method: 'POST',
-        headers: {
-            'Authorization': 'Bearer ' + localStorage.getItem('token')
-        }
+        credentials: "include",
     }).then(response => response.json())
         .then(data => {
             document.querySelector('.friend-list').innerHTML = '';
@@ -105,9 +101,9 @@ load_chats()
 const getMessege = (chat_id) => {
     fetch('/get_message', {
         method: 'POST',
+        credentials: "include",
         headers: {
             "Content-Type": "application/json",
-            'Authorization': 'Bearer ' + localStorage.getItem('token')
         },
         body: JSON.stringify({chat_id: chat_id})
     }).then(response => response.json())
@@ -117,7 +113,7 @@ const getMessege = (chat_id) => {
 }
 
 const load_messeges = (messages) => {
-    const user_id = parseJWT().id
+    const user_id = localStorage.getItem("user_id")
     const content = document.querySelector('.messages');
     content.innerHTML = '';
     messages.forEach(message => {
@@ -137,21 +133,6 @@ const load_messeges = (messages) => {
     })
 }
 
-function parseJWT() {
-    const token = localStorage.getItem('token');
-    try {
-        const base64Url = token.split('.')[1]; // Берём payload (вторую часть)
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/'); // Декодируем Base64
-        const jsonPayload = decodeURIComponent(atob(base64).split('').map(c =>
-            '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
-        ).join(''));
-        return JSON.parse(jsonPayload); // Парсим JSON
-    } catch (e) {
-        console.error("Invalid token", e);
-        return null;
-    }
-}
-
 const sendMessage = () => {
     const messageInput = document.querySelector('#message_input').value.trim();
     let chat_id = Number(document.querySelector('.active').dataset.id);
@@ -164,11 +145,15 @@ const sendMessage = () => {
 
     fetch('/send_message', {
         method: 'POST',
+        credentials: "include",
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + localStorage.getItem('token')
         },
-        body: JSON.stringify({"message": messageInput, "sender_id": parseJWT().id, "chat_id": chat_id})
+        body: JSON.stringify({
+            "message": messageInput,
+            "sender_id": localStorage.getItem("user_id"),
+            "chat_id": chat_id
+        })
     }).then(response => {
         if (!response.ok) throw new Error(response.status);
 
@@ -177,12 +162,12 @@ const sendMessage = () => {
         .then(data => {
             document.querySelector('.chat-footer').querySelector('input').value = '';
 
-            create_message({message: messageInput, id: data.message_id}, parseJWT().id)
+            create_message({message: messageInput, id: data.message_id}, localStorage.getItem("user_id"))
 
             socket.emit("send_message", {
                 "text": messageInput,
                 "chat_id": data.chat_id,
-                "user_id": parseJWT().id,
+                "user_id": localStorage.getItem("user_id"),
                 "message_id": data.message_id
             })
         })
@@ -190,9 +175,9 @@ const sendMessage = () => {
             if (e.message === "404") {
                 fetch("/create_new_chat", {
                     method: 'POST',
+                    credentials: "include",
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + localStorage.getItem('token')
                     },
                     body: JSON.stringify({"id": Number(document.querySelector('.active').dataset.id)})
                 }).then(response => {
@@ -203,13 +188,13 @@ const sendMessage = () => {
                     .then(data => {
                         fetch('/send_message', {
                             method: 'POST',
+                            credentials: "include",
                             headers: {
                                 'Content-Type': 'application/json',
-                                'Authorization': 'Bearer ' + localStorage.getItem('token')
                             },
                             body: JSON.stringify({
                                 "message": messageInput,
-                                "sender_id": parseJWT().id,
+                                "sender_id": localStorage.getItem("user_id"),
                                 "chat_id": data.chat_id
                             })
                         }).then(response => {
@@ -220,12 +205,12 @@ const sendMessage = () => {
                             .then(data => {
                                 document.querySelector('.chat-footer').querySelector('input').value = '';
 
-                                create_message(messageInput, parseJWT().id)
+                                create_message(messageInput, localStorage.getItem("user_id"))
 
                                 socket.emit("send_message", {
                                     "text": messageInput,
                                     "chat_id": data.chat_id,
-                                    "user_id": parseJWT().id,
+                                    "user_id": localStorage.getItem("user_id"),
                                     "message_id": data.message_id
                                 })
                             }).catch(e => {
@@ -290,9 +275,9 @@ const searchFriends = () => {
 
         fetch("/find_friends", {
             method: "POST",
+            credentials: "include",
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + localStorage.getItem('token')
             },
             body: JSON.stringify({"username": inputValue})
         }).then(res => {
@@ -373,9 +358,9 @@ const editMessageRes = (id) => {
 
     fetch("/edit_message", {
         method: "POST",
+        credentials: "include",
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + localStorage.getItem('token')
         },
         body: JSON.stringify({"content": message, "message_id": id})
     }).then(res => {
@@ -389,7 +374,7 @@ const editMessageRes = (id) => {
         socket.emit("edit_message", {
             "text": message,
             "chat_id": data.chat_id,
-            "user_id": parseJWT().id,
+            "user_id": localStorage.getItem("user_id"),
             "message_id": id
         })
     }).catch(e => {

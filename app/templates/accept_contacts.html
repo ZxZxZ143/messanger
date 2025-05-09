@@ -48,9 +48,9 @@
     async function loadRequests() {
         const res = await fetch("/contacts/get_pending_contacts", {
             method: "POST",
+            credentials: "include",
             headers: {
                 "Content-Type": "application/json",
-                'Authorization': 'Bearer ' + localStorage.getItem('token')
             }
         });
         const data = await res.json();
@@ -77,25 +77,25 @@
 
         if (accept) {
             const res = await fetch(`/contacts/accept_contacts`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                'Authorization': 'Bearer ' + localStorage.getItem('token')
-            },
-            body: JSON.stringify({contact_id: requestId})
-        });
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({contact_id: requestId})
+            });
 
             div.remove(); // Удаляем из DOM при принятии
 
         } else {
             const res = await fetch(`/contacts/reject_contacts`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                'Authorization': 'Bearer ' + localStorage.getItem('token')
-            },
-            body: JSON.stringify({contact_id: requestId})
-        });
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({contact_id: requestId})
+            });
 
             div.classList.add("inactive"); // Делаем полупрозрачным при отклонении
         }

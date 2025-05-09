@@ -115,9 +115,9 @@
     async function loadContacts() {
         const res = await fetch("/contacts/get_contacts", {
             method: "POST",
+            credentials: "include",
             headers: {
                 "Content-Type": "application/json",
-                'Authorization': 'Bearer ' + localStorage.getItem('token')
             }
         });
         const data = await res.json();
@@ -172,9 +172,9 @@
 
         fetch('/create_new_group_chat', {
             method: 'POST',
+            credentials: "include",
             headers: {
                 "Content-Type": "application/json",
-                'Authorization': 'Bearer ' + localStorage.getItem('token')
             },
             body: JSON.stringify(payload)
         })

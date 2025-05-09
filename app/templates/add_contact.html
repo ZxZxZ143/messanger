@@ -53,11 +53,11 @@
         const query = document.getElementById("contact_username").value;
         if (!query.trim()) return;
 
-        const res = await fetch(`/find_friends`, {
+        const res = await fetch(`/contacts/get_new_users`, {
             method: "POST",
+            credentials: "include",
             headers: {
                 "Content-Type": "application/json",
-                'Authorization': 'Bearer ' + localStorage.getItem('token')
             },
             body: JSON.stringify({"username": query})
         });
@@ -70,8 +70,8 @@
                 const div = document.createElement("div");
                 div.className = "user-item";
                 div.innerHTML = `
-            <span>${user[0]}</span>
-            <button onclick="sendRequest(${user[1]})">Add</button>
+            <span>${user.username}</span>
+            <button onclick="sendRequest(${user.id})">Add</button>
           `;
                 results.appendChild(div);
             });
@@ -83,9 +83,9 @@
     async function sendRequest(userId) {
         const res = await fetch("/contacts/add_contacts", {
             method: "POST",
+            credentials: "include",
             headers: {
                 "Content-Type": "application/json",
-                'Authorization': 'Bearer ' + localStorage.getItem('token')
             },
             body: JSON.stringify({contact_id: userId})
         });

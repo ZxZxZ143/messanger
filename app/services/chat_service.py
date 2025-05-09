@@ -1,7 +1,6 @@
 from flask import jsonify
-from flask_jwt_extended import get_jwt_identity, get_jwt
-from flask_socketio import join_room
-from pygments.lexers import q
+from flask_jwt_extended import get_jwt_identity, get_jwt, create_access_token, create_refresh_token, set_access_cookies, \
+    set_refresh_cookies
 
 from app.extensions import db, socketio
 from ..models.Message_status import Message_status
@@ -9,6 +8,7 @@ from ..models.User import Users
 from ..models.Chat_users import Chat_users
 from ..models.Chat import Chat
 from ..models.Message import Message
+from ..utils.update_jwt import set_jwt_cookies
 
 
 def send_message_service(request):
@@ -31,6 +31,7 @@ def send_message_service(request):
 
         db.session.add(new_message)
         db.session.commit()
+
         message_status = Message_status(
             message_id=new_message.id,
             user_id=user_id,
@@ -40,9 +41,12 @@ def send_message_service(request):
         db.session.commit()
     except Exception as error:
         db.session.rollback()
+        print(error)
         return jsonify({"status": 500, "message": str(error)}), 500
 
-    return jsonify({"status": 200, "message": "success", "chat_id": chat_id, "message_id": new_message.id}), 200
+    res = jsonify({"status": 200, "message": "success", "chat_id": chat_id, "message_id": new_message.id})
+
+    return set_jwt_cookies(res)
 
 
 def get_user_messages(request):
@@ -52,7 +56,10 @@ def get_user_messages(request):
     messages = Message.query.filter_by(chat_id=chat_id).order_by(Message.sent_at.asc()).all()
     for m in messages:
         response.append({"content": m.content, "sender_id": m.sender_id, "message_id": m.id})
-    return jsonify({"status": 200, "messages": response}), 200
+
+    res = jsonify({"status": 200, "messages": response})
+
+    return set_jwt_cookies(res)
 
 
 def get_user_friends(request):
@@ -80,7 +87,9 @@ def get_user_friends(request):
                 res_part.append(username)
         response.append(res_part)
 
-    return jsonify({"status": 200, "message": "success", "chats": response}), 200
+    res = jsonify({"status": 200, "message": "success", "chats": response})
+
+    return set_jwt_cookies(res)
 
 
 def get_users_by_username(request):
@@ -96,7 +105,9 @@ def get_users_by_username(request):
     if len(response) == 0:
         return jsonify({"status": 404, "message": "user not found"}), 404
     else:
-        return jsonify({"status": 200, "message": "success", "users": response}), 200
+        res = jsonify({"status": 200, "message": "success", "users": response})
+
+        return set_jwt_cookies(res)
 
 
 def create_new_chat(request):
@@ -133,7 +144,9 @@ def create_new_chat(request):
         socketio.emit('join_chat', {"chat_id": new_chat.id, "chat_name": chat_name_for_user, "user_id": user_id},
                       room=user_id)
 
-        return jsonify({"status": 200, "message": "chat created", "chat_id": new_chat.id}), 200
+        res = jsonify({"status": 200, "message": "chat created", "chat_id": new_chat.id})
+
+        return set_jwt_cookies(res)
     except Exception as e:
         return jsonify({"status": 500, "message": "something went wrong"}), 500
 
@@ -175,7 +188,9 @@ def create_new_group_chat(request):
         socketio.emit('join_chat', {"chat_id": new_chat.id, "chat_name": name, "user_id": user_id},
                       room=user_id)
 
-        return jsonify({"status": 200, "message": "success", "chat_id": new_chat.id}), 200
+        res = jsonify({"status": 200, "message": "chat created", "chat_id": new_chat.id})
+
+        return set_jwt_cookies(res)
     except Exception as e:
         return jsonify({"status": 500, "message": "something went wrong", "error": e}), 500
 
@@ -194,6 +209,8 @@ def edit_message_service(request):
 
         db.session.commit()
 
-        return jsonify({"status": 200, "message": "success", "message_id": message_id, "chat_id": message.chat_id}), 200
+        res = jsonify({"status": 200, "message": "success", "message_id": message_id, "chat_id": message.chat_id})
+
+        return set_jwt_cookies(res)
     except Exception as e:
         return jsonify({"status": 500, "message": "something went wrong", "error": e}), 500
